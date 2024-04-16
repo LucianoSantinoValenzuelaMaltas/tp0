@@ -24,21 +24,20 @@ int main(void)
 
 	config = iniciar_config();
 
-	ip = config_get_string_value(config, "IP");
-	puerto = config_get_string_value(config, "PUERTO");
-
-	log_info(logger, "Lei la IP %s y el PUERTO %s\n", ip, puerto);
-
-
 	// Usando el config creado previamente, leemos los valores del config y los 
 	// dejamos en las variables 'ip', 'puerto' y 'valor'
+	ip = config_get_string_value(config, "IP");
+	puerto = config_get_string_value(config, "PUERTO");
+	valor = config_get_string_value(config, "CLAVE");
 
 	// Loggeamos el valor de config
+	log_info(logger, "Leí la IP %s y el PUERTO %s", ip, puerto); //extra
+	log_info(logger, "Leí la CLAVE %s\n", valor);
 
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
-	leer_consola(logger);
+	//leer_consola(logger);
 
 	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
 
@@ -48,10 +47,11 @@ int main(void)
 	conexion = crear_conexion(ip, puerto);
 
 	// Enviamos al servidor el valor de CLAVE como mensaje
+	enviar_mensaje(valor, conexion);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion);
-
+	
 	terminar_programa(conexion, logger, config);
 
 	/*---------------------------------------------------PARTE 5-------------------------------------------------------------*/
@@ -86,10 +86,13 @@ void leer_consola(t_log* logger)
 	leido = readline("> ");
 
 	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
-
-
+	while(strcmp(leido, "")!=0){
+		log_info(logger, leido);
+		free(leido);
+		leido = readline("> ");
+	}
 	// ¡No te olvides de liberar las lineas antes de regresar!
-
+	
 }
 
 void paquete(int conexion)
@@ -97,12 +100,21 @@ void paquete(int conexion)
 	// Ahora toca lo divertido!
 	char* leido;
 	t_paquete* paquete;
+	
+	//Creo paquete
+	paquete = crear_paquete();
 
 	// Leemos y esta vez agregamos las lineas al paquete
-
-
+	leido = readline("> ");
+	while(strcmp(leido, "")!=0){
+		agregar_a_paquete(paquete, leido, strlen(leido) + 1);
+		free(leido);
+		leido = readline("> ");
+	}
+	enviar_paquete(paquete, conexion);
 	// ¡No te olvides de liberar las líneas y el paquete antes de regresar!
 	
+	eliminar_paquete(paquete);
 }
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
@@ -115,6 +127,9 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
 		config_destroy(config);
 	}
 
+	liberar_conexion(conexion);
+
 	/* Y por ultimo, hay que liberar lo que utilizamos (conexion, log y config) 
 	  con las funciones de las commons y del TP mencionadas en el enunciado */
+	  exit(-1);
 }
